@@ -5,9 +5,30 @@ description = ""
 authors = ["tristancals <tristancals38@gmail.com>"]
 readme = "README.md"
 
+
 [tool.poetry.dependencies]
 python = "^3.10"
+flask = "^2.3.2"
+openai-whisper = "^20230314"
+setuptools-rust = "^1.6.0"
+torch = {version = "^2.0.1+cpu", source = "foo"}
+torchvision = {version = "^0.15.2+cpu", source = "foo"}
+torchaudio = {version = "^2.0.2+cpu", source = "foo"}
+sympy = "^1.12"
+numba = "^0.57.0"
+redis = "^4.5.5"
+celery = [
+    { version = "^5.2.7" },
+    { version = "^5.2.7", extras = ["redis"], optional = true },
+]
 
+[tool.poetry.extras]
+redis = ["celery"]
+
+[[tool.poetry.source]]
+name = "foo"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "supplemental"
 
 [build-system]
 requires = ["poetry-core"]
