@@ -25,3 +25,7 @@ $ flask -A task_app run --debug
 Go to http://localhost:5000/ and use the forms to submit tasks. You can see the polling
 requests in the browser dev tools and the Flask logs. You can see the tasks submitting
 and completing in the Celery logs.
+
+
+
+
