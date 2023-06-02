@@ -5,130 +5,144 @@
   <title>Celery Example</title>
 </head>
 <body>
-<h2>Celery Example</h2>
-Execute background tasks with Celery. Submits tasks and shows results using JavaScript.
+    <h2>Celery Example</h2>
+    Execute background tasks with Celery. Submits tasks and shows results using JavaScript.
 
-<hr>
-<h4>Add</h4>
-<p>Start a task to add two numbers, then poll for the result.
-<form id=add method=post action="{{ url_for("tasks.add") }}">
-  <label>A <input type=number name=a value=4></label><br>
-  <label>B <input type=number name=b value=2></label><br>
-  <input type=submit>
-</form>
-<p>Result: <span id=add-result></span></p>
+    <hr>
+    <h4>Audio</h4>
+    <p>Start a task that convert audio file to text, waiting result of convert and display text.
+    <form id=audio method=post action="{{ url_for("tasks.audio") }}">
+        <label for="audio"></label>
+        <input type="file"
+               name="audio"
+               accept="audio/mp3"><br>
+        <input type=submit>
+    </form>
+    <p id=audio-result></p>
+    <hr>
+    <h4>Add</h4>
+    <p>Start a task to add two numbers, then poll for the result.
+    <form id=add method=post action="{{ url_for("tasks.add") }}">
+      <label>A <input type=number name=a value=4></label><br>
+      <label>B <input type=number name=b value=2></label><br>
+      <input type=submit>
+    </form>
+    <p>Result: <span id=add-result></span></p>
 
-<hr>
-<h4>Block</h4>
-<p>Start a task that takes 5 seconds. However, the response will return immediately.
-<form id=block method=post action="{{ url_for("tasks.block") }}">
-  <input type=submit>
-</form>
-<p id=block-result></p>
+    <hr>
+    <h4>Block</h4>
+    <p>Start a task that takes 5 seconds. However, the response will return immediately.
+    <form id=block method=post action="{{ url_for("tasks.block") }}">
+      <input type=submit>
+    </form>
+    <p id=block-result></p>
 
-<hr>
-<h4>Process</h4>
-<p>Start a task that counts, waiting one second each time, showing progress.
-<form id=process method=post action="{{ url_for("tasks.process") }}">
-  <label>Total <input type=number name=total value="10"></label><br>
-  <input type=submit>
-</form>
-<p id=process-result></p>
-
-<form id=audio method=post action="{{ url_for("tasks.audio") }}">
-<label for="audio"></label>
-<input type="file"
-       name="audio"
-       accept="audio/mp3">
-  <div>
-     <button>Envoyer</button>
-  </div>
-</form>
-<p id=audio-result></p>
+    <hr>
+    <h4>Process</h4>
+    <p>Start a task that counts, waiting one second each time, showing progress.
+    <form id=process method=post action="{{ url_for("tasks.process") }}">
+        <label>Total <input type=number name=total value="10"></label><br>
+        <input type=submit>
+    </form>
+    <p id=process-result></p>
 
 <script>
-  const taskForm = (formName, doPoll, report) => {
+// fonction qui écoute toutes les actions venant des formulaires,
+// elle permet de soumettre une requête "POST" à l'API flask
+// qui nous retourne si un result est attendue('result_ignore=False')
+// un id de cette demande pour soumettre des requêtes "GET" à l'API
+// affin de récupérer le result de celle-ci
+
+// formName : nom du formulaire et de la fonction de l'API
+// doPoll : Boolean si result attendu True
+// report : propre à javascript permet de donner des informations sur une requête API
+const taskForm = (formName, doPoll, report) => {
     document.forms[formName].addEventListener("submit", (event) => {
-      event.preventDefault()
-      fetch(event.target.action, {
-        method: "POST",
-        body: new FormData(event.target)
-      })
-        .then(response => response.json())
-        .then(data => {
-          report(null)
-
-          const poll = () => {
-            fetch(`/tasks/result/${data["result_id"]}`)
-              .then(response => response.json())
-              .then(data => {
-                report(data)
-
-                if (!data["ready"]) {
-                  setTimeout(poll, 500)
-                } else if (!data["successful"]) {
-                  console.error(formName, data)
-                }
-              })
-          }
-
-          if (doPoll) {
-            poll()
-          }
+        event.preventDefault()
+        // requête POST
+        fetch(event.target.action, {
+            method: "POST",
+            body: new FormData(event.target)
         })
+            .then(response => response.json())
+            .then(data => {
+                report(null)
+                // une fois la requête POST effectuer
+                // déclaration de la fonction poll() qui rappel toute les 500ms
+                // l'API Flask pour récupérer les datas avec l'id récupérer dans
+                // de la requête "POST" précédente
+                // elle se rappelle elle-même tant que
+                // la réponse reçue n'est pas à data['ready']=True
+                const poll = () => {
+                    fetch(`/tasks/result/${data["result_id"]}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("fetch(`/tasks/result/${data[\"result_id\"]}`)",data)
+                            if (!data["ready"]) {
+                                setTimeout(poll, 500)
+                            } else if (!data["successful"]) {
+                                console.error(formName, data)
+                            }
+                        })
+                }
+                if (doPoll) {
+                    poll()
+                }
+            })
     })
-  }
+}
 
-  taskForm("add", true, data => {
+taskForm("add", true, data => {
     const el = document.getElementById("add-result")
-
+    console.log("data_add")
+    console.log(data)
     if (data === null) {
-      el.innerText = "submitted"
+        el.innerText = "submitted"
     } else if (!data["ready"]) {
-      el.innerText = "waiting"
+        el.innerText = "waiting"
     } else if (!data["successful"]) {
-      el.innerText = "error, check console"
+        el.innerText = "error, check console"
     } else {
-      el.innerText = data["value"]
+        el.innerText = data["value"]
     }
-  })
+    console.log(data)
+})
 
-  taskForm("block", false, data => {
+taskForm("block", false, data => {
     document.getElementById("block-result").innerText = (
-      "request finished, check celery log to see task finish in 5 seconds"
+        "request finished, check celery log to see task finish in 5 seconds"
     )
-  })
+})
 
-  taskForm("process", true, data => {
+taskForm("process", true, data => {
     const el = document.getElementById("process-result")
 
     if (data === null) {
-      el.innerText = "submitted"
+        el.innerText = "submitted"
     } else if (!data["ready"]) {
-      el.innerText = `${data["value"]["current"]} / ${data["value"]["total"]}`
+        el.innerText = `${data["value"]["current"]} / ${data["value"]["total"]}`
     } else if (!data["successful"]) {
-      el.innerText = "error, check console"
+        el.innerText = "error, check console"
     } else {
-      el.innerText = "✅ done"
+        el.innerText = "✅ done"
     }
-    console.log(data)
-  })
+})
 
 
-
-  taskForm("audio", true, data => {
+taskForm("audio", true, data => {
     const el = document.getElementById("audio-result")
-
+    console.log("data_audio")
+    console.log(data)
     if (data === null) {
-      el.innerText = "submitted"
+        el.innerText = "submitted"
     } else if (!data["ready"]) {
-      el.innerText = "waiting"
+        el.innerText = "waiting"
     } else if (!data["successful"]) {
-      el.innerText = "error, check console"
+        el.innerText = "error, check console"
     } else {
-      el.innerText = data["value"]
+        el.innerText = data["value"]["text"]
     }
-  })
+})
 </script>
 </body>
 </html>

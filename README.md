@@ -9,16 +9,12 @@ From this directory, create a virtualenv and install the application into it. Th
 Celery worker.
 
 ```shell
-$ python3 -m venv .venv
-$ . ./.venv/bin/activate
-$ pip install -r requirements.txt && pip install -e .
 $ celery -A make_celery worker --loglevel INFO
 ```
 
 In a separate terminal, activate the virtualenv and run the Flask development server.
 
 ```shell
-$ . ./.venv/bin/activate
 $ flask -A task_app run --debug
 ```
 
